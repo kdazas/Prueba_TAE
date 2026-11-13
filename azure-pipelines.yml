@@ -1,0 +1,67 @@
+# Pipeline de pruebas automatizadas – Azure DevOps
+#
+# Un solo archivo, dos formas de ejecutarse:
+#   - PR:       lo dispara la política de rama de "main" (Build validation). Corre solo las pruebas @pr.
+#   - Nocturna: la dispara el horario (schedules). Corre todo, incluidas las pruebas de reloj.
+#
+# SUPUESTOS: el pool del agente self-hosted se llama "SelfHosted"; las URLs de QA están en el
+# grupo de variables "reservas-qa" (API_URL, BASE_URL). Ningún valor queda escrito en el código.
+
+trigger: none   # no corre en cada push; solo por PR (política de rama) o por horario
+
+schedules:
+  - cron: '0 7 * * *'      # 07:00 UTC = 02:00 en Bogotá
+    displayName: Ejecución nocturna
+    branches:
+      include: [main]
+    always: true           # corre aunque no haya cambios: detecta problemas del ambiente y pruebas inestables
+
+pool:
+  name: SelfHosted
+
+variables:
+  - group: reservas-qa
+  - name: TEST_ENV
+    value: qa
+
+jobs:
+  - job: pruebas
+    displayName: Pruebas automatizadas
+    timeoutInMinutes: 90
+    steps:
+      - task: NodeTool@0
+        inputs:
+          versionSpec: '20.x'
+
+      - script: npm ci && npx playwright install --with-deps chromium
+        displayName: Instalar dependencias
+
+      # En un PR, las pruebas deben ejecutarse contra un despliegue del cambio
+      # (p. ej. una revisión temporal de Azure Container Apps), no contra QA, que tiene la versión anterior.
+
+      - script: npm run test:pr
+        displayName: Pruebas del PR (@pr)
+        condition: ne(variables['Build.Reason'], 'Schedule')
+        timeoutInMinutes: 15   # presupuesto de 10 min; se corta en 15 para no bloquear el único agente
+
+      - script: npm run test:nocturna
+        displayName: Ejecución nocturna (todo, 1 reintento para detectar inestables)
+        condition: eq(variables['Build.Reason'], 'Schedule')
+        env:
+          # La nocturna corre en la ventana de las 02:00 reservada con QA: solo ahí se permite mover el reloj global.
+          QA_RELOJ_EXCLUSIVO: '1'
+
+      - task: PublishTestResults@2
+        displayName: Publicar resultados en Azure DevOps
+        condition: always()   # también cuando fallan: es cuando más se necesitan
+        inputs:
+          testResultsFormat: JUnit
+          testResultsFiles: test-results/junit.xml
+          testRunTitle: $(Build.Reason) - $(Build.SourceBranchName)
+
+      - task: PublishPipelineArtifact@1
+        displayName: Guardar reporte HTML y traces
+        condition: always()
+        inputs:
+          targetPath: playwright-report
+          artifact: reporte-playwright-$(System.JobAttempt)
