@@ -1,0 +1,27 @@
+{
+  "name": "reservas-e2e",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Pruebas automatizadas - Plataforma de Reservas de Espacios Académicos (prueba técnica)",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "playwright test",
+    "test:pr": "playwright test --project=api --project=ui --grep @pr",
+    "test:nocturna": "EJECUCION=nocturna playwright test",
+    "test:api": "playwright test --project=api",
+    "test:reloj": "playwright test --project=reloj --no-deps",
+    "report": "playwright show-report",
+    "typecheck": "tsc --noEmit",
+    "demo": "MOCK=1 playwright test --project=api && MOCK=1 playwright test --project=reloj --no-deps",
+    "demo:ui": "MOCK=1 playwright test --ui --project=api --project=reloj",
+    "demo:paralelo": "MOCK=1 playwright test --project=api --repeat-each=5 --reporter=list"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.0",
+    "@types/node": "^22.20.5",
+    "dotenv": "^16.6.1",
+    "typescript": "5.9"
+  }
+}
