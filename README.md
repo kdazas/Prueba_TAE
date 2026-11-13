@@ -2,7 +2,7 @@
 
 Base de un framework en **Playwright + TypeScript** para la prueba técnica de Especialista de Automatización de Pruebas (Parte 2).
 
-- **2.1 Revisión del PR generado con IA:** [docs/parte-2.1-revision-pr.md](docs/parte-2.1-revision-pr.md)
+- **2.1 Revisión del PR:** [docs/parte-2.1-revision-pr.md](docs/parte-2.1-revision-pr.md)
 - **2.2 Framework y las dos pruebas pedidas:** este repositorio.
 
 > No existe una aplicación disponible. Para poder **ejecutar** las pruebas incluí un **mock de la API** ([mock-api/servidor.mjs](mock-api/servidor.mjs)) que imita el contrato del caso. No forma parte del framework: solo sirve para demostrar el diseño. El mock no valida el SSO, el vencimiento real del token ni el proceso real del backend.
